@@ -287,6 +287,36 @@ module Pod
         end
     end
 end
+
+module Pod
+     module Generator
+         class CopydSYMsScript
+             old_method = instance_method(:generate)
+             define_method(:generate) do
+                 script = old_method.bind(self).()
+                 script = script.gsub(/-av/, "-r -L -p -t -g -o -D -v")
+             end
+         end
+     end
+ end
+
+ module Pod
+     module Generator
+         class CopyXCFrameworksScript
+             old_method = instance_method(:script)
+             define_method(:script) do
+                 script = old_method.bind(self).()
+                 script = script.gsub(/-av/, "-r -L -p -t -g -o -D -v")
+             end
+         end
+     end
+ end
+
+ Pod::Installer::Xcode::PodsProjectGenerator::PodTargetInstaller.define_singleton_method(:dsym_paths) do |target|
+     dsym_paths = target.framework_paths.values.flatten.reject { |fmwk_path| fmwk_path.dsym_path.nil? }.map(&:dsym_path)
+     dsym_paths.concat(target.xcframeworks.values.flatten.flat_map { |xcframework| xcframework_dsyms(xcframework.path) })
+     dsym_paths.uniq
+ end    
     
 module Pod
      class Installer
